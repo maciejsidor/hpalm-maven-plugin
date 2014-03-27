@@ -1,4 +1,4 @@
-package com.sim.hpalm.defects;
+package com.googlecode.msidor.maven.plugins.hpalm.deliverynote;
 
 import java.util.List;
 

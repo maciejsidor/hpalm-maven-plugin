@@ -1,4 +1,4 @@
-package com.sim.hpalm.defects;
+package com.googlecode.msidor.maven.plugins.hpalm.deliverynote;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;

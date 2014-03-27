@@ -1,4 +1,4 @@
-package com.sim.hpalm.maven.plugin;
+package com.googlecode.msidor.maven.plugins.hpalm.deliverynote;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -28,9 +28,6 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
 import sun.misc.BASE64Encoder;
 
-import com.sim.hpalm.defects.EntitiesRoot;
-import com.sim.hpalm.defects.Entity;
-import com.sim.hpalm.defects.Field;
 
 /**
  * 		Useful HP ALM REST API :
