@@ -84,7 +84,7 @@
 					<useReleaseProfile>false</useReleaseProfile>
 					<tagNameFormat>release-@{project.version}</tagNameFormat>
 					<checkModificationExcludes>
-						<checkModificationExclude>pom.xml</checkModificationExclude>
+						<checkModificationExclude>release.properties</checkModificationExclude>
 					</checkModificationExcludes>
 				</configuration>
 				<dependencies>
