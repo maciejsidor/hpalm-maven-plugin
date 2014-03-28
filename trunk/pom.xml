@@ -4,7 +4,7 @@
 	<packaging>maven-plugin</packaging>
 	<groupId>com.googlecode.msidor.maven.plugins</groupId>
 	<artifactId>hpalm-maven-plugin</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 
 	<name>hpalm-maven-plugin</name>
 
