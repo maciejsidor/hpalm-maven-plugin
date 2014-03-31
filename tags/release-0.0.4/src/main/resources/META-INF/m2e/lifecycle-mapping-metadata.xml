@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lifecycleMappingMetadata>
+	<pluginExecutions>
+		<pluginExecution>
+			<pluginExecutionFilter>
+				<groupId>
+					com.googlecode.msidor.maven.plugins
+				</groupId>
+				<artifactId>
+					hpalm-maven-plugin
+				</artifactId>
+				<goals>
+					<goal>generate-change</goal>
+				</goals>
+			</pluginExecutionFilter>
+			<action>
+				<ignore></ignore>
+			</action>
+		</pluginExecution>
+	</pluginExecutions>
+</lifecycleMappingMetadata>
