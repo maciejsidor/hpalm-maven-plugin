@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -204,124 +205,175 @@ public class HPALMMavenPlugin extends AbstractMojo
 		/***********************************************************
 		 * Authenticate to HP ALM
 		 ***********************************************************/
-		getLog().info("Authenticate to HP ALM");
-		String cokie = authenticate(url + "/qcbin/authentication-point/authenticate", login, password);
+		getLog().info("Authenticating to HP ALM...");
+		String cokie = null;
+		try
+		{
+		    cokie = authenticate(url + "/qcbin/authentication-point/authenticate", login, password);
+		}
+		catch(Exception e)
+		{
+		    throw new MojoExecutionException( "Could not authenticate to HP ALM", e );
+		}
 
 		/***********************************************************
 		 * Prepare HP ALM query statement
 		 ***********************************************************/
-		getLog().info("Prepare HP ALM query statement");
-		if (query == null)
-		{
-			query = "";
-			Set<String> keys = queryValues.keySet();
-			boolean isFirstItem = true;
-			for (String key : keys)
-			{
-				String value = queryValues.get(key);
+		getLog().info("Preparing HP ALM query statement...");
+		try
+        {
+            if ( query == null )
+            {
+                query = "";
+                Set<String> keys = queryValues.keySet();
+                boolean isFirstItem = true;
+                for ( String key : keys )
+                {
+                    String value = queryValues.get( key );
 
-				try
-				{
-					// the + signs are not parsed as the spaces thus additional
-					// conversion to %20 is needed
-					key = URLEncoder.encode(key, "UTF-8").replace("+", "%20");
-					value = URLEncoder.encode(value, "UTF-8").replace("+", "%20");
-				}
-				catch (UnsupportedEncodingException e)
-				{
-					e.printStackTrace();
-				}
+                    try
+                    {
+                        // the + signs are not parsed as the spaces thus additional
+                        // conversion to %20 is needed
+                        key = URLEncoder.encode( key, "UTF-8" ).replace( "+", "%20" );
+                        value = URLEncoder.encode( value, "UTF-8" ).replace( "+", "%20" );
+                    }
+                    catch ( UnsupportedEncodingException e )
+                    {
+                        e.printStackTrace();
+                    }
 
-				query += (isFirstItem ? "" : ";") + key + "[%22" + value + "%22]";
-				isFirstItem = false;
-			}
-		}
-
-		getLog().debug("Final HP ALM query: " + query);
-
-		/***********************************************************
+                    query += ( isFirstItem ? "" : ";" ) + key + "[%22" + value + "%22]";
+                    isFirstItem = false;
+                }
+            }
+            getLog().debug( "Final HP ALM query: " + query );
+        }
+        catch ( Exception e )
+        {
+            throw new MojoExecutionException( "Could not produce HP ALM query", e );
+        }
+		
+		
+		
+        /***********************************************************
 		 * Retrieve entities
 		 ***********************************************************/
-		getLog().info("Execute HP ALM query");
-		boolean hasMoreentities = true;
-		int startIndex = 1;
-		List<Entity> entities = new ArrayList<Entity>();
+		getLog().info("Executing HP ALM query...");
+		List<Entity> entities = null;
 
-		while (hasMoreentities)
-		{
-			String res = get(url + "/qcbin/rest/domains/" + domain + "/projects/" + project + "/defects?page-size=10&start-index=" + startIndex + "&query={" + query + "}", cokie);
+		try
+        {
+            boolean hasMoreentities = true;
+            int startIndex = 1;
+            entities = new ArrayList<Entity>();
+            while ( hasMoreentities )
+            {
+                String finalURL = url + "/qcbin/rest/domains/" + domain + "/projects/" + project
+                    + "/defects?page-size=10&start-index=" + startIndex + "&query={" + query + "}";
+                getLog().debug( "Final HP ALM url: " + finalURL );
+                String res = get( finalURL, cokie );
 
-			List<Entity> entitiesToAdd = parse(res);
+                List<Entity> entitiesToAdd = parse( res );
 
-			if (entitiesToAdd != null) entities.addAll(entitiesToAdd);
+                if ( entitiesToAdd != null )
+                    entities.addAll( entitiesToAdd );
 
-			startIndex += 10;
-			hasMoreentities = (entities != null && entities.size() == 10);
-		}
-
-		/***********************************************************
+                startIndex += 10;
+                hasMoreentities = ( entities != null && entities.size() == 10 );
+            }
+        }
+        catch ( Exception e )
+        {
+            throw new MojoExecutionException( "Could not execute HP ALM query", e );
+        }
+		
+		
+		
+        /***********************************************************
 		 * Generate summary HTML table report for CONLUENCE
 		 ***********************************************************/
-		getLog().info("Generate summary HTML table report for CONLUENCE");
-		StringBuilder html = new StringBuilder();
-		html.append("<table><tbody>");
+		getLog().info("Generating summary HTML table report for CONLUENCE...");
+		StringBuilder html = null;
+		try
+        {
+            html = new StringBuilder();
+            html.append( "<table><tbody>" );
+            // --[get headers row]--
+            html.append( "<tr>" );
+            // for each columns defined
+            for ( String key : valuesToExport )
+            {
+                String value = null;
 
-		// --[get headers row]--
-		html.append("<tr>");
+                // check if translation is defined
+                if ( translationOfValuesToExport != null && translationOfValuesToExport.containsKey( key ) )
+                    value = translationOfValuesToExport.get( key );
+                else
+                    value = key;
 
-		// for each columns defined
-		for (String key : valuesToExport)
-		{
-			String value = null;
+                // for null values use NBSP
+                if ( value == null || value.trim().isEmpty() )
+                    value = "&nbsp;";
 
-			// check if translation is defined
-			if (translationOfValuesToExport != null && translationOfValuesToExport.containsKey(key)) value = translationOfValuesToExport.get(key);
-			else value = key;
-
-			// for null values use NBSP
-			if (value == null || value.trim().isEmpty()) value = "&nbsp;";
-
-			html.append("<th>" + value + "</th>");
-		}
-		html.append("</tr>");
-
-		// --[get entity row]--
-		for (Entity entity : entities)
-		{
-			getHTMLForEntity(entity, html);
-		}
-		html.append("</tbody></table>");
-		getLog().debug("Generated HTML code: " + html);
-
-		/***********************************************************
+                html.append( "<th>" + value + "</th>" );
+            }
+            html.append( "</tr>" );
+            // --[get entity row]--
+            for ( Entity entity : entities )
+            {
+                getHTMLForEntity( entity, html );
+            }
+            html.append( "</tbody></table>" );
+            getLog().debug( "Generated HTML code: " + html );
+        }
+        catch ( Exception e )
+        {
+            throw new MojoExecutionException( "Could not Generate summary HTML table report for CONLUENCE", e );
+        }
+		
+		
+        /***********************************************************
 		 * Update CONLUENCE
 		 ***********************************************************/
-		getLog().info("Update CONLUENCE");
+		getLog().info("Updating CONLUENCE page...");
 		try
-		{
-			updateConfluencePage(html.toString());
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-
-		/***********************************************************
+        {
+            updateConfluencePage( html.toString() );
+        }
+        catch ( Exception e )
+        {
+            throw new MojoExecutionException( "Could not update CONLUENCE page", e );
+        }
+		
+		
+		
+        /***********************************************************
 		 * Generate changes file
 		 ***********************************************************/
-		getLog().info("Generate changes file");
+		getLog().info("Generate changes file...");
 
 		// TODO generate change file
 
 		/***********************************************************
 		 * Update HP ALM entities
 		 ***********************************************************/
-		getLog().info("Update HP ALM entities");
-		for (Entity entity : entities)
+		if(valuesToUpdate!= null && valuesToUpdate.size()>0)
 		{
-			String xml = getUpdateStatement(entity);
-			getLog().debug("Update statement: " + xml);
-			put(url + "/qcbin/rest/domains/" + domain + "/projects/" + project + "/defects/" + entity.id, xml, cokie);
+    		getLog().info("Updating HP ALM entities...");
+    		try
+            {
+                for (Entity entity : entities)
+                {
+                	String xml = getUpdateStatement(entity);
+                	getLog().debug("Update statement: " + xml);
+                	put(url + "/qcbin/rest/domains/" + domain + "/projects/" + project + "/defects/" + entity.id, xml, cokie);
+                }
+            }
+            catch ( Exception e )
+            {
+                throw new MojoExecutionException( "Could not update HP ALM entities", e );
+            }
 		}
 	}
 
@@ -352,7 +404,7 @@ public class HPALMMavenPlugin extends AbstractMojo
 		i += confluenceKeyWordForUpdate.length();
 
 		// if keyword was found
-		if (i >= 0)
+		if (i >confluenceKeyWordForUpdate.length())
 		{
 			content = content.substring(0, i) + updateHeader + contentToAdd + content.substring(i);
 		}
@@ -596,6 +648,8 @@ public class HPALMMavenPlugin extends AbstractMojo
 
 			// set the header parameters
 			connection.setRequestProperty("Accept", "application/xml");
+			connection.setRequestProperty("Accept-Charset", "UTF-8");
+			connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
 
 			// set the cookie if one has been given
 			if (cookie != null) connection.setRequestProperty("Cookie", cookie);
@@ -607,8 +661,9 @@ public class HPALMMavenPlugin extends AbstractMojo
 
 			// Get Response
 			StringBuffer response = new StringBuffer();
+			getLog().debug( "Connection encoding: "+connection.getContentEncoding() );
 			InputStream is = connection.getInputStream();
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is,Charset.forName( "UTF-8" )));
 			String line;
 			while ((line = rd.readLine()) != null)
 			{
