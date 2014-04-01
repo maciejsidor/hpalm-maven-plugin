@@ -16,7 +16,9 @@ limitations under the License.
 package com.googlecode.msidor.maven.plugins.hpalm.deliverynote;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -192,6 +194,20 @@ public class HPALMMavenPlugin extends AbstractMojo
 	 * @parameter
 	 */
 	private String updateHeader = null;
+	
+    /**
+     * Path that the changes fill will be created 
+     * 
+     * @parameter
+     */
+	private String              changesOutputFilePath          = null;	
+    private Map<String, String> changesFixIssuesFilter         = null;	
+    private Map<String, String> changesAddIssuesFilter         = null;
+    private Map<String, String> changesUpdateIssuesFilter      = null;
+    private Map<String, String> changesRemoveIssuesFilter      = null;
+    private String              changesDevFiledMapping         = null;
+    private String              changesDescFiledMapping        = null;
+    private String              changesDueToFiledMapping       = null;
 
 	/**
 	 * <p>
@@ -264,10 +280,10 @@ public class HPALMMavenPlugin extends AbstractMojo
 
 		try
         {
-            boolean hasMoreentities = true;
+            boolean hasMoreEntities = true;
             int startIndex = 1;
             entities = new ArrayList<Entity>();
-            while ( hasMoreentities )
+            while ( hasMoreEntities )
             {
                 String finalURL = url + "/qcbin/rest/domains/" + domain + "/projects/" + project
                     + "/defects?page-size=10&start-index=" + startIndex + "&query={" + query + "}";
@@ -280,7 +296,7 @@ public class HPALMMavenPlugin extends AbstractMojo
                     entities.addAll( entitiesToAdd );
 
                 startIndex += 10;
-                hasMoreentities = ( entities != null && entities.size() == 10 );
+                hasMoreEntities = ( entities != null && entities.size() == 10 );
             }
         }
         catch ( Exception e )
@@ -351,9 +367,37 @@ public class HPALMMavenPlugin extends AbstractMojo
         /***********************************************************
 		 * Generate changes file
 		 ***********************************************************/
-		getLog().info("Generate changes file...");
-
-		// TODO generate change file
+		if(changesOutputFilePath!=null)
+		{
+    		getLog().info("Generating changes file...");
+            try
+            {
+                BufferedWriter writer = new BufferedWriter( new FileWriter( changesOutputFilePath ) );
+                            
+                writer.write( "<document>\n" );
+                writer.write( "<body>\n" );
+                writer.write( "<release version=\""++"\" date=\""++"\">\n" );
+                                
+                //put the add issues first
+                for ( Entity entity : entities )
+                {
+                    writer.write( "<action dev=\""+entity.dev+"\" type=\""++"\" issue=\""+entity.id+"\" due-to=\""+entity.dueTo+"\">\n" );
+                    writer.write( entity.desc );
+                    writer.write( "</action>\n" );                    
+                }
+                
+                writer.write( "</release>\n" );
+                writer.write( "</document>\n" );
+                writer.write( "</body>\n" );
+                writer.flush();
+                writer.close();
+                
+            }
+            catch ( Exception e )
+            {
+                throw new MojoExecutionException( "Could not generate changes file", e );
+            }
+		}
 
 		/***********************************************************
 		 * Update HP ALM entities
@@ -501,21 +545,102 @@ public class HPALMMavenPlugin extends AbstractMojo
 			// parse the XML body
 			StringReader reader = new StringReader(xmlBody);
 			EntitiesRoot entitiesRoot = (EntitiesRoot) unmarshaller.unmarshal(reader);
-
-			// update the ID filed of entity due to simplify the entities
-			// identification.
+			
+			//parse some attributes to simplify the defects processing
 			if (entitiesRoot != null)
 			{
 				if (entitiesRoot.entities != null) for (Entity entity : entitiesRoot.entities)
 				{
+				    
+		            int countOfFixTypeConditionsValidated    = 0;
+		            int countOfAddTypeConditionsValidated    = 0;
+		            int countOfUpdateTypeConditionsValidated = 0;
+		            int countOfRemoveTypeConditionsValidated = 0;
+				    
+		            //parse the attributes
 					if (entity.fields != null) for (Field field : entity.fields)
 					{
+					    
+			            // update the ID filed of entity due to simplify the entities identification.					    
 						if (field.name.equalsIgnoreCase("id"))
 						{
 							entity.id = field.value;
-							break;
+
 						}
+						if (field.name.equalsIgnoreCase(changesDevFiledMapping))
+                        {
+                            entity.dev = field.value;
+  
+                        }
+                        if (field.name.equalsIgnoreCase(changesDescFiledMapping))
+                        {
+                            entity.desc = field.value;
+     
+                        }				
+                        if (field.name.equalsIgnoreCase(changesDueToFiledMapping))
+                        {
+                            entity.dueTo = field.value;
+       
+                        }
+                        
+                        //check changes filter for add type issues
+                        if( changesAddIssuesFilter!=null && changesAddIssuesFilter.containsKey(field.name))
+                        {
+                            if(changesAddIssuesFilter.get( field.name ).equalsIgnoreCase( field.value))
+                                countOfAddTypeConditionsValidated++;
+                        }
+                        
+                        //check changes filter for fix type issues
+                        if( changesFixIssuesFilter!=null && changesFixIssuesFilter.containsKey(field.name))
+                        {
+                            if(changesFixIssuesFilter.get( field.name ).equalsIgnoreCase( field.value))
+                                countOfFixTypeConditionsValidated++;
+                        }    
+                        
+                        //check changes filter for update type issues
+                        if( changesUpdateIssuesFilter!=null && changesUpdateIssuesFilter.containsKey(field.name))
+                        {
+                            if(changesUpdateIssuesFilter.get( field.name ).equalsIgnoreCase( field.value))
+                                countOfUpdateTypeConditionsValidated++;
+                        }           
+                        
+                        //check changes filter for remove type issues
+                        if( changesRemoveIssuesFilter!=null && changesRemoveIssuesFilter.containsKey(field.name))
+                        {
+                            if(changesRemoveIssuesFilter.get( field.name ).equalsIgnoreCase( field.value))
+                                countOfRemoveTypeConditionsValidated++;
+                        }                             
+						
 					}
+					
+					//set the issue type
+					
+                    //check changes filter for add type issues
+                    if( changesAddIssuesFilter!=null && changesAddIssuesFilter.size()==countOfAddTypeConditionsValidated)
+                    {
+                        entity.isAddType=true;
+                    }
+                    
+                    //check changes filter for fix type issues
+                    if( changesFixIssuesFilter!=null && changesFixIssuesFilter.size()==countOfFixTypeConditionsValidated)
+                    {
+                        entity.isFixType=true;
+                    }    
+                    
+                    //check changes filter for update type issues
+                    if( changesUpdateIssuesFilter!=null && changesUpdateIssuesFilter.size()==countOfUpdateTypeConditionsValidated)
+                    {
+                        entity.isUpdateType=true;
+                    }           
+                    
+                    //check changes filter for remove type issues
+                    if( changesRemoveIssuesFilter!=null && changesRemoveIssuesFilter.size()==countOfRemoveTypeConditionsValidated)
+                    {
+                        entity.isRemoveType=true;
+                    }     					
+					
+					
+					
 				}
 
 				return entitiesRoot.entities;
@@ -797,5 +922,85 @@ public class HPALMMavenPlugin extends AbstractMojo
 
 		return resultToReturn;
 	}
+
+    public String getChangesOutputFilePath()
+    {
+        return changesOutputFilePath;
+    }
+
+    public void setChangesOutputFilePath( String changesOutputFilePath )
+    {
+        this.changesOutputFilePath = changesOutputFilePath;
+    }
+
+    public Map<String, String> getChangesFixIssuesFilter()
+    {
+        return changesFixIssuesFilter;
+    }
+
+    public void setChangesFixIssuesFilter( Map<String, String> changesFixIssuesFilter )
+    {
+        this.changesFixIssuesFilter = changesFixIssuesFilter;
+    }
+
+    public Map<String, String> getChangesAddIssuesFilter()
+    {
+        return changesAddIssuesFilter;
+    }
+
+    public void setChangesAddIssuesFilter( Map<String, String> changesAddIssuesFilter )
+    {
+        this.changesAddIssuesFilter = changesAddIssuesFilter;
+    }
+
+    public Map<String, String> getChangesUpdateIssuesFilter()
+    {
+        return changesUpdateIssuesFilter;
+    }
+
+    public void setChangesUpdateIssuesFilter( Map<String, String> changesUpdateIssuesFilter )
+    {
+        this.changesUpdateIssuesFilter = changesUpdateIssuesFilter;
+    }
+
+    public Map<String, String> getChangesRemoveIssuesFilter()
+    {
+        return changesRemoveIssuesFilter;
+    }
+
+    public void setChangesRemoveIssuesFilter( Map<String, String> changesRemoveIssuesFilter )
+    {
+        this.changesRemoveIssuesFilter = changesRemoveIssuesFilter;
+    }
+
+    public String getChangesDevFiledMapping()
+    {
+        return changesDevFiledMapping;
+    }
+
+    public void setChangesDevFiledMapping( String changesDevFiledMapping )
+    {
+        this.changesDevFiledMapping = changesDevFiledMapping;
+    }
+
+    public String getChangesDueToFiledMapping()
+    {
+        return changesDueToFiledMapping;
+    }
+
+    public void setChangesDueToFiledMapping( String changesDueToFiledMapping )
+    {
+        this.changesDueToFiledMapping = changesDueToFiledMapping;
+    }
+
+    public String getChangesDescFiledMapping()
+    {
+        return changesDescFiledMapping;
+    }
+
+    public void setChangesDescFiledMapping( String changesDescFiledMapping )
+    {
+        this.changesDescFiledMapping = changesDescFiledMapping;
+    }
 
 }
