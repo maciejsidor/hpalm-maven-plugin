@@ -15,20 +15,13 @@ limitations under the License.
  */
 package com.googlecode.msidor.maven.plugins.hpalm.deliverynote;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +34,6 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.xmlrpc.client.XmlRpcClient;
-import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
-
-import sun.misc.BASE64Encoder;
 
 /**
  * @author Maciej SIDOR
@@ -78,7 +67,6 @@ import sun.misc.BASE64Encoder;
  *         </p>
  * @goal generate-change
  * */
-@SuppressWarnings("restriction")
 public class HPALMMavenPlugin extends AbstractMojo
 {
 	/**
@@ -179,7 +167,7 @@ public class HPALMMavenPlugin extends AbstractMojo
 	 * 
 	 * @parameter
 	 */
-	private Object confluencePageID = null;
+	private String confluencePageID = null;
 
 	/**
 	 * The keyword on CONFLUENCE page under which the new content will be put.
@@ -201,13 +189,101 @@ public class HPALMMavenPlugin extends AbstractMojo
      * @parameter
      */
 	private String              changesOutputFilePath          = null;	
+	
+    /**
+     * Map of HP ALM fields and values that will be used to evaluate if a defect's type is "FIX" in chnages.xml.
+     * It might happen that the same defect will evaluate correctly for each other filters.    
+     * In such a case following order applies:
+     * <ol>
+     * <Li>FIX</Li>
+     * <Li>ADD</Li>
+     * <Li>UPDATE</Li>
+     * <Li>REMOVE</Li>
+     * </ol>
+     * 
+     * @parameter
+     */
     private Map<String, String> changesFixIssuesFilter         = null;	
+    
+    /**
+     * Map of HP ALM fields and values that will be used to evaluate if a defect's type is "ADD" in chnages.xml.
+     * It might happen that the same defect will evaluate correctly for each other filters.    
+     * In such a case following order applies:
+     * <ol>
+     * <Li>FIX</Li>
+     * <Li>ADD</Li>
+     * <Li>UPDATE</Li>
+     * <Li>REMOVE</Li>
+     * </ol>
+     * 
+     * @parameter
+     */    
     private Map<String, String> changesAddIssuesFilter         = null;
+    
+    /**
+     * Map of HP ALM fields and values that will be used to evaluate if a defect's type is "UPDATE" in chnages.xml.
+     * It might happen that the same defect will evaluate correctly for each other filters.    
+     * In such a case following order applies:
+     * <ol>
+     * <Li>FIX</Li>
+     * <Li>ADD</Li>
+     * <Li>UPDATE</Li>
+     * <Li>REMOVE</Li>
+     * </ol>
+     * 
+     * @parameter
+     */    
     private Map<String, String> changesUpdateIssuesFilter      = null;
+
+    /**
+     * Map of HP ALM fields and values that will be used to evaluate if a defect's type is "REMOVE" in chnages.xml.
+     * It might happen that the same defect will evaluate correctly for each other filters.    
+     * In such a case following order applies:
+     * <ol>
+     * <Li>FIX</Li>
+     * <Li>ADD</Li>
+     * <Li>UPDATE</Li>
+     * <Li>REMOVE</Li>
+     * </ol>
+     * 
+     * @parameter
+     */        
     private Map<String, String> changesRemoveIssuesFilter      = null;
+    
+    /**
+     * HP ALM defect filed that will be mapped to "dev" attribute in chnages.xml  
+     * 
+     * @parameter
+     */    
     private String              changesDevFiledMapping         = null;
+    
+    /**
+     * HP ALM defect filed that will be mapped to issue description in chnages.xml
+     * 
+     * @parameter
+     */    
     private String              changesDescFiledMapping        = null;
+    
+    /**
+     * HP ALM defect filed that will be mapped to "DueTo" attribute in chnages.xml
+     * 
+     * @parameter
+     */    
     private String              changesDueToFiledMapping       = null;
+
+    
+    /**
+     * Release version that will be assigned to the set of issues in chnages.xml
+     * 
+     * @parameter expression="${project.version}"
+     */    
+	private String 				changeProjectVersion		  = null;
+
+	
+	/**
+	 * Plugin Data Access Object
+	 */
+	private HPALMMavenPluginDAOI dao 						  = new DefaultHPALMMavenPluginDAO();
 
 	/**
 	 * <p>
@@ -225,7 +301,7 @@ public class HPALMMavenPlugin extends AbstractMojo
 		String cokie = null;
 		try
 		{
-		    cokie = authenticate(url + "/qcbin/authentication-point/authenticate", login, password);
+		    cokie = dao.authenticateToHPALM(url, login, password);
 		}
 		catch(Exception e)
 		{
@@ -238,32 +314,7 @@ public class HPALMMavenPlugin extends AbstractMojo
 		getLog().info("Preparing HP ALM query statement...");
 		try
         {
-            if ( query == null )
-            {
-                query = "";
-                Set<String> keys = queryValues.keySet();
-                boolean isFirstItem = true;
-                for ( String key : keys )
-                {
-                    String value = queryValues.get( key );
-
-                    try
-                    {
-                        // the + signs are not parsed as the spaces thus additional
-                        // conversion to %20 is needed
-                        key = URLEncoder.encode( key, "UTF-8" ).replace( "+", "%20" );
-                        value = URLEncoder.encode( value, "UTF-8" ).replace( "+", "%20" );
-                    }
-                    catch ( UnsupportedEncodingException e )
-                    {
-                        e.printStackTrace();
-                    }
-
-                    query += ( isFirstItem ? "" : ";" ) + key + "[%22" + value + "%22]";
-                    isFirstItem = false;
-                }
-            }
-            getLog().debug( "Final HP ALM query: " + query );
+            buildQueryStatement();
         }
         catch ( Exception e )
         {
@@ -280,24 +331,7 @@ public class HPALMMavenPlugin extends AbstractMojo
 
 		try
         {
-            boolean hasMoreEntities = true;
-            int startIndex = 1;
-            entities = new ArrayList<Entity>();
-            while ( hasMoreEntities )
-            {
-                String finalURL = url + "/qcbin/rest/domains/" + domain + "/projects/" + project
-                    + "/defects?page-size=10&start-index=" + startIndex + "&query={" + query + "}";
-                getLog().debug( "Final HP ALM url: " + finalURL );
-                String res = get( finalURL, cokie );
-
-                List<Entity> entitiesToAdd = parse( res );
-
-                if ( entitiesToAdd != null )
-                    entities.addAll( entitiesToAdd );
-
-                startIndex += 10;
-                hasMoreEntities = ( entities != null && entities.size() == 10 );
-            }
+            entities = retreiveEntities(cokie);
         }
         catch ( Exception e )
         {
@@ -309,58 +343,34 @@ public class HPALMMavenPlugin extends AbstractMojo
         /***********************************************************
 		 * Generate summary HTML table report for CONLUENCE
 		 ***********************************************************/
-		getLog().info("Generating summary HTML table report for CONLUENCE...");
-		StringBuilder html = null;
-		try
-        {
-            html = new StringBuilder();
-            html.append( "<table><tbody>" );
-            // --[get headers row]--
-            html.append( "<tr>" );
-            // for each columns defined
-            for ( String key : valuesToExport )
-            {
-                String value = null;
-
-                // check if translation is defined
-                if ( translationOfValuesToExport != null && translationOfValuesToExport.containsKey( key ) )
-                    value = translationOfValuesToExport.get( key );
-                else
-                    value = key;
-
-                // for null values use NBSP
-                if ( value == null || value.trim().isEmpty() )
-                    value = "&nbsp;";
-
-                html.append( "<th>" + value + "</th>" );
-            }
-            html.append( "</tr>" );
-            // --[get entity row]--
-            for ( Entity entity : entities )
-            {
-                getHTMLForEntity( entity, html );
-            }
-            html.append( "</tbody></table>" );
-            getLog().debug( "Generated HTML code: " + html );
-        }
-        catch ( Exception e )
-        {
-            throw new MojoExecutionException( "Could not Generate summary HTML table report for CONLUENCE", e );
-        }
+		if(confluenceServer!=null)
+		{
+			getLog().info("Generating summary HTML table report for CONLUENCE...");
+			StringBuilder html = null;
+			try
+	        {
+	            html = generateHTML(entities);
+	        }
+	        catch ( Exception e )
+	        {
+	            throw new MojoExecutionException( "Could not Generate summary HTML table report for CONLUENCE", e );
+	        }
 		
 		
         /***********************************************************
 		 * Update CONLUENCE
 		 ***********************************************************/
-		getLog().info("Updating CONLUENCE page...");
-		try
-        {
-            updateConfluencePage( html.toString() );
-        }
-        catch ( Exception e )
-        {
-            throw new MojoExecutionException( "Could not update CONLUENCE page", e );
-        }
+
+			getLog().info("Updating CONLUENCE page...");
+			try
+	        {
+	            updateConfluencePage( html.toString() );
+	        }
+	        catch ( Exception e )
+	        {
+	            throw new MojoExecutionException( "Could not update CONLUENCE page", e );
+	        }
+		}
 		
 		
 		
@@ -372,25 +382,7 @@ public class HPALMMavenPlugin extends AbstractMojo
     		getLog().info("Generating changes file...");
             try
             {
-                BufferedWriter writer = new BufferedWriter( new FileWriter( changesOutputFilePath ) );
-                            
-                writer.write( "<document>\n" );
-                writer.write( "<body>\n" );
-                writer.write( "<release version=\""++"\" date=\""++"\">\n" );
-                                
-                //put the add issues first
-                for ( Entity entity : entities )
-                {
-                    writer.write( "<action dev=\""+entity.dev+"\" type=\""++"\" issue=\""+entity.id+"\" due-to=\""+entity.dueTo+"\">\n" );
-                    writer.write( entity.desc );
-                    writer.write( "</action>\n" );                    
-                }
-                
-                writer.write( "</release>\n" );
-                writer.write( "</document>\n" );
-                writer.write( "</body>\n" );
-                writer.flush();
-                writer.close();
+                generateChangesXML(entities);
                 
             }
             catch ( Exception e )
@@ -407,12 +399,7 @@ public class HPALMMavenPlugin extends AbstractMojo
     		getLog().info("Updating HP ALM entities...");
     		try
             {
-                for (Entity entity : entities)
-                {
-                	String xml = getUpdateStatement(entity);
-                	getLog().debug("Update statement: " + xml);
-                	put(url + "/qcbin/rest/domains/" + domain + "/projects/" + project + "/defects/" + entity.id, xml, cokie);
-                }
+                updateEntities(cokie, entities);
             }
             catch ( Exception e )
             {
@@ -421,7 +408,156 @@ public class HPALMMavenPlugin extends AbstractMojo
 		}
 	}
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * Updating given entities in HP ALM
+	 * 
+	 * @param cokie HP ALM session cookie
+	 * @param entities List of entities to update
+	 * @throws Exception
+	 */
+	private void updateEntities(String cokie, List<Entity> entities) throws Exception
+	{
+		for (Entity entity : entities)
+		{
+			String xml = getUpdateStatement(entity);
+			getLog().debug("Update statement: " + xml);
+			dao.putToHPALM(url + "/qcbin/rest/domains/" + domain + "/projects/" + project + "/defects/" + entity.id, xml, cokie);
+		}
+	}
+
+	/**
+	 * Generate changes XML
+	 * 
+	 * @param entities List of entities to update to export
+	 * @throws Exception
+	 */
+	private void generateChangesXML(List<Entity> entities) throws Exception
+	{
+		BufferedWriter writer = new BufferedWriter( new FileWriter( changesOutputFilePath ) );
+		            
+		writer.write( "<document>\n" );
+		writer.write( "<body>\n" );
+		writer.write( "<release version=\""+changeProjectVersion+"\" date=\""+Calendar.getInstance().getTime().toString()+"\">\n" );
+		                
+		//put all the issues
+		for ( Entity entity : entities )
+		{
+		    writer.write( "<action dev=\""+entity.dev+"\" type=\""+entity.changeType+"\" issue=\""+entity.id+"\" due-to=\""+entity.dueTo+"\">\n" );
+		    writer.write( entity.desc );
+		    writer.write( "\n</action>\n" );                    
+		}
+		
+		writer.write( "</release>\n" );
+		writer.write( "</document>\n" );
+		writer.write( "</body>\n" );
+		writer.flush();
+		writer.close();
+	}
+
+	/**
+	 * Generate HTML table
+	 * 
+	 * @param entities list of entities to export to HTML
+	 * @return HTML content
+	 */
+	private StringBuilder generateHTML(List<Entity> entities) throws Exception
+	{
+		StringBuilder html;
+		html = new StringBuilder();
+		html.append( "<table><tbody>" );
+		// --[get headers row]--
+		html.append( "<tr>" );
+		// for each columns defined
+		for ( String key : valuesToExport )
+		{
+		    String value = null;
+
+		    // check if translation is defined
+		    if ( translationOfValuesToExport != null && translationOfValuesToExport.containsKey( key ) )
+		        value = translationOfValuesToExport.get( key );
+		    else
+		        value = key;
+
+		    // for null values use NBSP
+		    if ( value == null || value.trim().isEmpty() )
+		        value = "&nbsp;";
+
+		    html.append( "<th>" + value + "</th>" );
+		}
+		html.append( "</tr>" );
+		// --[get entity row]--
+		for ( Entity entity : entities )
+		{
+		    getHTMLForEntity( entity, html );
+		}
+		html.append( "</tbody></table>" );
+		getLog().debug( "Generated HTML code: " + html );
+		return html;
+	}
+
+	/**
+	 * Query for entities in the HP ALM
+	 * 
+	 * @param cokie HP ALM session authentication cookie
+	 * @return List of entities from HP ALM
+	 * @throws Exception
+	 */
+	private List<Entity> retreiveEntities(String cokie) throws Exception
+	{
+		List<Entity> entities;
+		boolean hasMoreEntities = true;
+		int startIndex = 1;
+		entities = new ArrayList<Entity>();
+		while ( hasMoreEntities )
+		{
+		    String finalURL = url + "/qcbin/rest/domains/" + domain + "/projects/" + project + "/defects?page-size=10&start-index=" + startIndex + "&query={" + query + "}";
+		    getLog().debug( "Final HP ALM url: " + finalURL );
+		    String res = dao.getFromHPALM( finalURL, cokie );
+
+		    List<Entity> entitiesToAdd = parse( res );
+
+		    if ( entitiesToAdd != null )
+		        entities.addAll( entitiesToAdd );
+
+		    startIndex += 10;
+		    hasMoreEntities = ( entities != null && entities.size() == 10 );
+		}
+		return entities;
+	}
+
+	/**
+	 * Building HP ALM query statement
+	 */
+	private void buildQueryStatement()
+	{
+		if ( query == null )
+		{
+		    query = "";
+		    Set<String> keys = queryValues.keySet();
+		    boolean isFirstItem = true;
+		    for ( String key : keys )
+		    {
+		        String value = queryValues.get( key );
+
+		        try
+		        {
+		            // the + signs are not parsed as the spaces thus additional
+		            // conversion to %20 is needed
+		            key = URLEncoder.encode( key, "UTF-8" ).replace( "+", "%20" );
+		            value = URLEncoder.encode( value, "UTF-8" ).replace( "+", "%20" );
+		        }
+		        catch ( UnsupportedEncodingException e )
+		        {
+		            e.printStackTrace();
+		        }
+
+		        query += ( isFirstItem ? "" : ";" ) + key + "[%22" + value + "%22]";
+		        isFirstItem = false;
+		    }
+		}
+		getLog().debug( "Final HP ALM query: " + query );
+	}
+
 	/**
 	 * Update confluence page with given content and defined header under the given keyword (or at the top of page in none given)
 	 * @param contentToAdd - content to put to confluence page
@@ -429,17 +565,12 @@ public class HPALMMavenPlugin extends AbstractMojo
 	 */
 	private void updateConfluencePage(String contentToAdd) throws Exception
 	{
-		// get the connection string
-		XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
-		config.setServerURL(new URL(confluenceServer + "/rpc/xmlrpc"));
-		XmlRpcClient client = new XmlRpcClient();
-		client.setConfig(config);
+		dao.initializeXmlRpcClient(confluenceServer);
 
-		// authenticate with user and password
-		Object result = client.execute("confluence2.login", new String[] { confleunceUser, confluencePassword });
+		Object result = dao.authenticateToConfluence(confleunceUser,confluencePassword);
 
 		// get the confluence page
-		HashMap<Object, Object> page = (HashMap<Object, Object>) client.execute("confluence2.getPage", new Object[] { result, confluencePageID });
+		HashMap<Object, Object> page = dao.getConfluencePage(result,confluencePageID);
 		getLog().debug("Current CONFLUENCE page: " + page);
 
 		// try to find the keyword under which the content will be put
@@ -469,7 +600,7 @@ public class HPALMMavenPlugin extends AbstractMojo
 		// update confluence page
 		page.put("content", content);
 		HashMap<Object, Object> pageUpdateOptions = new HashMap<Object, Object>();
-		page = (HashMap<Object, Object>) client.execute("confluence2.updatePage", new Object[] { result, page, pageUpdateOptions });
+		dao.updateConfluencePage(result, page, pageUpdateOptions);
 	}
 
 	/**
@@ -614,29 +745,30 @@ public class HPALMMavenPlugin extends AbstractMojo
 					}
 					
 					//set the issue type
-					
-                    //check changes filter for add type issues
-                    if( changesAddIssuesFilter!=null && changesAddIssuesFilter.size()==countOfAddTypeConditionsValidated)
-                    {
-                        entity.isAddType=true;
-                    }
-                    
+					                    
                     //check changes filter for fix type issues
                     if( changesFixIssuesFilter!=null && changesFixIssuesFilter.size()==countOfFixTypeConditionsValidated)
                     {
-                        entity.isFixType=true;
-                    }    
+                        entity.changeType="FIX";
+                    }
+                    
+                    //check changes filter for add type issues
+                    if( changesAddIssuesFilter!=null && changesAddIssuesFilter.size()==countOfAddTypeConditionsValidated)
+                    {
+                    	entity.changeType="ADD";
+                    }
+                    
                     
                     //check changes filter for update type issues
                     if( changesUpdateIssuesFilter!=null && changesUpdateIssuesFilter.size()==countOfUpdateTypeConditionsValidated)
                     {
-                        entity.isUpdateType=true;
+                    	entity.changeType="UPDATE";
                     }           
                     
                     //check changes filter for remove type issues
                     if( changesRemoveIssuesFilter!=null && changesRemoveIssuesFilter.size()==countOfRemoveTypeConditionsValidated)
                     {
-                        entity.isRemoveType=true;
+                    	entity.changeType="REMOVE";
                     }     					
 					
 					
@@ -655,273 +787,8 @@ public class HPALMMavenPlugin extends AbstractMojo
 		return null;
 
 	}
+	
 
-	/**
-	 * Send content to target URL via PUT method
-	 * 
-	 * @param targetURL
-	 *            - target to send the content to
-	 * @param urlParameters
-	 *            - the content to be sent
-	 * @param cookie
-	 *            - cookie to be set in Cookie header file
-	 * @return response from the target URL
-	 * @throws MojoFailureException
-	 *             if server responded with code different than 200
-	 */
-	public String put(String targetURL, String urlParameters, String cookie) throws MojoFailureException
-	{
-		HttpURLConnection connection = null;
-		MojoFailureException exceptionToThrow = null;
-		String resultToReturn = null;
-
-		try
-		{
-			// Create connection
-			URL url = new URL(targetURL);
-			connection = (HttpURLConnection) url.openConnection();
-
-			// set the send method
-			connection.setRequestMethod("PUT");
-
-			// set the header parameters
-			connection.setRequestProperty("Content-Type", "application/xml");
-			connection.setRequestProperty("Content-Length", "" + Integer.toString(urlParameters.getBytes().length));
-			connection.setRequestProperty("Content-Language", "en-US");
-			connection.setRequestProperty("Accept", "application/xml");
-
-			// set the cookie if one has been given
-			if (cookie != null) connection.setRequestProperty("Cookie", cookie);
-
-			// setup connection features
-			connection.setDoInput(true);
-			connection.setDoOutput(true);
-
-			// Send request
-			DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-			wr.writeBytes(urlParameters);
-			wr.flush();
-			wr.close();
-
-			// Get Response
-			StringBuffer response = new StringBuffer();
-			InputStream is = connection.getInputStream();
-
-			// parse response
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-			String line;
-			while ((line = rd.readLine()) != null)
-			{
-				response.append(line);
-				response.append('\r');
-			}
-			rd.close();
-
-			resultToReturn = response.toString();
-
-		}
-		// try to gently close the connection
-		catch (Exception e)
-		{
-			String detailInfo = null;
-
-			// in case of exception try to obtain more information
-			if (connection != null) try
-			{
-				detailInfo = "Response code: " + connection.getResponseCode();
-				detailInfo += "; Response message: " + connection.getResponseMessage();
-			}
-			catch (IOException eInternal)
-			{/* ignore */
-			}
-
-			// prepare the exception to be thrown after the connection disposal
-			exceptionToThrow = new MojoFailureException(e, "Error occurced while posting data to HP ALM", "Error occurced while posting data to HP ALM: " + (detailInfo != null ? detailInfo : e.getMessage()));
-		}
-		finally
-		{
-
-			if (connection != null)
-			{
-				connection.disconnect();
-			}
-		}
-
-		if (exceptionToThrow != null) throw exceptionToThrow;
-
-		return resultToReturn;
-	}
-
-	/**
-	 * Get the content from target URL via GET method
-	 * 
-	 * @param targetURL
-	 *            - target to get the content from
-	 * @param cookie
-	 *            - cookie to be set in Cookie header file
-	 * @return response from the target URL
-	 * @throws MojoFailureException
-	 *             if server responded with code different than 200
-	 */
-	public String get(String targetURL, String cookie) throws MojoFailureException
-	{
-		HttpURLConnection connection = null;
-		MojoFailureException exceptionToThrow = null;
-		String resultToReturn = null;
-
-		try
-		{
-			// Create connection
-			URL url = new URL(targetURL);
-			connection = (HttpURLConnection) url.openConnection();
-
-			// set the send method
-			connection.setRequestMethod("GET");
-
-			// set the header parameters
-			connection.setRequestProperty("Accept", "application/xml");
-			connection.setRequestProperty("Accept-Charset", "UTF-8");
-			connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
-
-			// set the cookie if one has been given
-			if (cookie != null) connection.setRequestProperty("Cookie", cookie);
-
-			// set connection features
-			connection.setUseCaches(false);
-			connection.setDoInput(true);
-			connection.setDoOutput(true);
-
-			// Get Response
-			StringBuffer response = new StringBuffer();
-			getLog().debug( "Connection encoding: "+connection.getContentEncoding() );
-			InputStream is = connection.getInputStream();
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is,Charset.forName( "UTF-8" )));
-			String line;
-			while ((line = rd.readLine()) != null)
-			{
-				response.append(line);
-				response.append('\r');
-			}
-			rd.close();
-
-			resultToReturn = response.toString();
-
-		}
-		// try to gently close the connection
-		catch (Exception e)
-		{
-			String detailInfo = null;
-
-			// in case of exception try to obtain more information
-			if (connection != null) try
-			{
-				detailInfo = "Response code: " + connection.getResponseCode();
-				detailInfo += "; Response message: " + connection.getResponseMessage();
-			}
-			catch (IOException eInternal)
-			{/* ignore */
-			}
-
-			// prepare the exception to be thrown after the connection disposal
-			exceptionToThrow = new MojoFailureException(e, "Error occurced while retrieving data from HP ALM", "Error occurced while retrieving data from HP ALM: " + (detailInfo != null ? detailInfo : e.getMessage()));
-		}
-		finally
-		{
-
-			if (connection != null)
-			{
-				connection.disconnect();
-			}
-		}
-
-		if (exceptionToThrow != null) throw exceptionToThrow;
-
-		return resultToReturn;
-	}
-
-	/**
-	 * Authenticate to HP ALM
-	 * 
-	 * @param targetURL
-	 *            - target to authenticate to
-	 * @param username
-	 *            - HP ALM user
-	 * @param password
-	 *            - HP ALM password
-	 * @return authentication cookie
-	 * @throws MojoFailureException
-	 *             if server responded with code different than 200
-	 */
-	public String authenticate(String targetURL, String username, String password) throws MojoFailureException
-	{
-		HttpURLConnection connection = null;
-		MojoFailureException exceptionToThrow = null;
-		String resultToReturn = null;
-
-		try
-		{
-			// Create connection
-			URL url = new URL(targetURL);
-			connection = (HttpURLConnection) url.openConnection();
-			connection.setRequestMethod("POST");
-
-			// prepare the authorization statement
-			String authorization = null;
-			if (username != null && password != null)
-			{
-				authorization = username + ":" + password;
-			}
-
-			if (authorization != null)
-			{
-				String encodedBytes;
-				BASE64Encoder enc = new sun.misc.BASE64Encoder();
-				encodedBytes = enc.encode(authorization.getBytes());
-				authorization = "Basic " + encodedBytes;
-				connection.setRequestProperty("Authorization", authorization);
-			}
-
-			// set the connection features
-			connection.setUseCaches(false);
-			connection.setDoInput(true);
-			connection.setDoOutput(true);
-
-			// Get Response
-			connection.getResponseCode();
-			resultToReturn = connection.getHeaderField("Set-Cookie");
-
-		}
-		// try to gently close the connection
-		catch (Exception e)
-		{
-			String detailInfo = null;
-
-			// in case of exception try to obtain more information
-			if (connection != null) try
-			{
-				detailInfo = "Response code: " + connection.getResponseCode();
-				detailInfo += "; Response message: " + connection.getResponseMessage();
-			}
-			catch (IOException eInternal)
-			{/* ignore */
-			}
-
-			// prepare the exception to be thrown after the connection disposal
-			exceptionToThrow = new MojoFailureException(e, "Error occurced while authenticating to HP ALM", "Error occurced while retrieving authenticating to HP ALM: " + (detailInfo != null ? detailInfo : e.getMessage()));
-		}
-		finally
-		{
-
-			if (connection != null)
-			{
-				connection.disconnect();
-			}
-		}
-
-		if (exceptionToThrow != null) throw exceptionToThrow;
-
-		return resultToReturn;
-	}
 
     public String getChangesOutputFilePath()
     {
@@ -1002,5 +869,15 @@ public class HPALMMavenPlugin extends AbstractMojo
     {
         this.changesDescFiledMapping = changesDescFiledMapping;
     }
+    
+	public HPALMMavenPluginDAOI getDao()
+	{
+		return dao;
+	}
+
+	public void setDao(HPALMMavenPluginDAOI dao)
+	{
+		this.dao = dao;
+	}    
 
 }

@@ -45,11 +45,5 @@ public class Entity
 
     public String dueTo;
 
-    public boolean isAddType = false;
-
-    public boolean isRemoveType = false;
-
-    public boolean isUpdateType = false;
-
-    public boolean isFixType = false;
+    public String changeType; 
 }
