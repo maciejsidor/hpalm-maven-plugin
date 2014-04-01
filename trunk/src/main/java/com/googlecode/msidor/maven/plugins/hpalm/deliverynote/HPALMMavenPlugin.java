@@ -400,18 +400,25 @@ public class HPALMMavenPlugin extends AbstractMojo
 
 		// try to find the keyword under which the content will be put
 		String content = (String) page.get("content");
-		int i = content.indexOf(confluenceKeyWordForUpdate);
-		i += confluenceKeyWordForUpdate.length();
+        int i = -1;
 
-		// if keyword was found
-		if (i >confluenceKeyWordForUpdate.length())
-		{
-			content = content.substring(0, i) + updateHeader + contentToAdd + content.substring(i);
-		}
-		else
-		{
-			content = updateHeader + contentToAdd + content;
-		}
+        if ( confluenceKeyWordForUpdate != null )
+            i = content.indexOf( confluenceKeyWordForUpdate );
+
+        if ( updateHeader == null )
+            updateHeader = "";
+
+        //if keyword was found
+        if ( i >= 0 )
+        {
+            i += confluenceKeyWordForUpdate.length();
+            content = content.substring( 0, i ) + updateHeader + contentToAdd + content.substring( i );
+        }
+        else
+        {
+            content = updateHeader + contentToAdd + content;
+        }
+	    
 
 		getLog().debug("and the new content: " + content);
 
