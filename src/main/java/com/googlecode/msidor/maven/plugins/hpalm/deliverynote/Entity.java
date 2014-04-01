@@ -38,4 +38,18 @@ public class Entity
 	public String type= null;
 
 	public String id;
+
+    public String dev;
+
+    public String desc;
+
+    public String dueTo;
+
+    public boolean isAddType = false;
+
+    public boolean isRemoveType = false;
+
+    public boolean isUpdateType = false;
+
+    public boolean isFixType = false;
 }
