@@ -16,10 +16,12 @@ limitations under the License.
 package com.googlecode.msidor.maven.plugins.hpalm.deliverynote;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -277,7 +279,7 @@ public class HPALMMavenPlugin extends AbstractMojo
      * 
      * @parameter expression="${project.version}"
      */    
-	private String 				changeProjectVersion		  = null;
+	private String 				changesProjectVersion		  = null;
 
 	
 	/**
@@ -433,11 +435,12 @@ public class HPALMMavenPlugin extends AbstractMojo
 	 */
 	private void generateChangesXML(List<Entity> entities) throws Exception
 	{
-		BufferedWriter writer = new BufferedWriter( new FileWriter( changesOutputFilePath ) );
+		BufferedWriter writer = new BufferedWriter( new OutputStreamWriter( new FileOutputStream ( changesOutputFilePath ), Charset.forName( "UTF-8" )) );
 		            
+		writer.write( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" );
 		writer.write( "<document>\n" );
 		writer.write( "<body>\n" );
-		writer.write( "<release version=\""+changeProjectVersion+"\" date=\""+Calendar.getInstance().getTime().toString()+"\">\n" );
+		writer.write( "<release version=\""+changesProjectVersion+"\" date=\""+Calendar.getInstance().getTime().toString()+"\">\n" );
 		                
 		//put all the issues
 		for ( Entity entity : entities )
@@ -448,8 +451,8 @@ public class HPALMMavenPlugin extends AbstractMojo
 		}
 		
 		writer.write( "</release>\n" );
+        writer.write( "</body>\n" );		
 		writer.write( "</document>\n" );
-		writer.write( "</body>\n" );
 		writer.flush();
 		writer.close();
 	}
@@ -788,88 +791,6 @@ public class HPALMMavenPlugin extends AbstractMojo
 
 	}
 	
-
-
-    public String getChangesOutputFilePath()
-    {
-        return changesOutputFilePath;
-    }
-
-    public void setChangesOutputFilePath( String changesOutputFilePath )
-    {
-        this.changesOutputFilePath = changesOutputFilePath;
-    }
-
-    public Map<String, String> getChangesFixIssuesFilter()
-    {
-        return changesFixIssuesFilter;
-    }
-
-    public void setChangesFixIssuesFilter( Map<String, String> changesFixIssuesFilter )
-    {
-        this.changesFixIssuesFilter = changesFixIssuesFilter;
-    }
-
-    public Map<String, String> getChangesAddIssuesFilter()
-    {
-        return changesAddIssuesFilter;
-    }
-
-    public void setChangesAddIssuesFilter( Map<String, String> changesAddIssuesFilter )
-    {
-        this.changesAddIssuesFilter = changesAddIssuesFilter;
-    }
-
-    public Map<String, String> getChangesUpdateIssuesFilter()
-    {
-        return changesUpdateIssuesFilter;
-    }
-
-    public void setChangesUpdateIssuesFilter( Map<String, String> changesUpdateIssuesFilter )
-    {
-        this.changesUpdateIssuesFilter = changesUpdateIssuesFilter;
-    }
-
-    public Map<String, String> getChangesRemoveIssuesFilter()
-    {
-        return changesRemoveIssuesFilter;
-    }
-
-    public void setChangesRemoveIssuesFilter( Map<String, String> changesRemoveIssuesFilter )
-    {
-        this.changesRemoveIssuesFilter = changesRemoveIssuesFilter;
-    }
-
-    public String getChangesDevFiledMapping()
-    {
-        return changesDevFiledMapping;
-    }
-
-    public void setChangesDevFiledMapping( String changesDevFiledMapping )
-    {
-        this.changesDevFiledMapping = changesDevFiledMapping;
-    }
-
-    public String getChangesDueToFiledMapping()
-    {
-        return changesDueToFiledMapping;
-    }
-
-    public void setChangesDueToFiledMapping( String changesDueToFiledMapping )
-    {
-        this.changesDueToFiledMapping = changesDueToFiledMapping;
-    }
-
-    public String getChangesDescFiledMapping()
-    {
-        return changesDescFiledMapping;
-    }
-
-    public void setChangesDescFiledMapping( String changesDescFiledMapping )
-    {
-        this.changesDescFiledMapping = changesDescFiledMapping;
-    }
-    
 	public HPALMMavenPluginDAOI getDao()
 	{
 		return dao;

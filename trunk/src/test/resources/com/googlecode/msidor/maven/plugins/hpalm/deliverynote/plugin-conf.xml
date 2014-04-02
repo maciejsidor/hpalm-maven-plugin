@@ -22,7 +22,45 @@
 			<plugin>
 				<artifactId>hpalm-maven-plugin</artifactId>
 				<configuration>
-					<outputDirectory>target/test-harness/project-to-test</outputDirectory>
+					<url>http://alm.eu.accor.net:8080</url>
+					<project>
+						TD_RESA
+					</project>
+					<domain>RES_AND_REV</domain>
+					<queryValues>
+						<project>
+							FOLS Sender
+						</project>
+						<status>Corrigée</status>
+						<planned-closing-ver>1.1.0</planned-closing-ver>
+					</queryValues>
+					<valuesToExport>
+						<param>id</param>
+						<param>name</param>
+						<param>owner</param>
+						<param>detected-by</param>
+						<param>user-04</param>
+						<param>user-03</param>
+						<param>user-08</param>
+						<param>creation-time</param>
+						<param>detection-version</param>
+						<param>severity</param>
+					</valuesToExport>
+					<translationOfValuesToExport>
+						<id>ID</id>
+						<name>Name</name>
+						<owner>Correcteur</owner>
+						<detected-by>Emmiteur</detected-by>
+						<user-04>04</user-04>
+						<user-03>03</user-03>
+						<user-08>08</user-08>
+						<creation-time>Crée</creation-time>
+						<detection-version>Detectée en version</detection-version>
+						<severity>Gravité</severity>
+					</translationOfValuesToExport>
+					<confluenceServer>http://confluence.accor.net</confluenceServer>
+					<confluencePageID>24391678</confluencePageID>
+					<updateHeader><![CDATA[<h2>${project.version}</h2>]]></updateHeader>
 				</configuration>
 			</plugin>
 		</plugins>

@@ -25,16 +25,18 @@ public class HPALMMavenPluginTestCase extends AbstractMojoTestCase
 	 * @throws Exception
 	 *             if any
 	 */
-	public void testSomething() throws Exception
+	public void testBasicExecution() throws Exception
 	{
-		File pom = getTestFile("src/test/resources/com/googlecode/msidor/maven/plugins/hpalm/deliverynote/plugin-config.xml");
+		File pom = getTestFile("src/test/resources/com/googlecode/msidor/maven/plugins/hpalm/deliverynote/plugin-conf.xml");
 		assertNotNull(pom);
 		assertTrue(pom.exists());
 
-		HPALMMavenPlugin myMojo = (HPALMMavenPlugin) lookupMojo("generate-change", pom);
-		myMojo.setDao(new HPALMMavenPluginDAOMockup());
-				
-		assertNotNull(myMojo);
-		myMojo.execute();
+		HPALMMavenPluginDAOMockup dao = new HPALMMavenPluginDAOMockup();
+		
+        HPALMMavenPlugin myMojo = (HPALMMavenPlugin) lookupMojo("generate-change", pom);
+        myMojo.setDao(dao);
+                
+        assertNotNull(myMojo);
+        myMojo.execute();
 	}
 }
