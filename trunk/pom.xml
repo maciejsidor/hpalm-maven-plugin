@@ -1,10 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<packaging>maven-plugin</packaging>
 	<groupId>com.googlecode.msidor.maven.plugins</groupId>
 	<artifactId>hpalm-maven-plugin</artifactId>
-	<version>0.0.5-SNAPSHOT</version>
+	<version>0.0.5</version>
 
 	<name>hpalm-maven-plugin</name>
 
@@ -42,9 +41,9 @@
 	</issueManagement>
 
 	<scm>
-		<connection>scm:svn:https://hpalm-maven-plugin.googlecode.com/svn/trunk/</connection>
-		<developerConnection>scm:svn:https://hpalm-maven-plugin.googlecode.com/svn/trunk/</developerConnection>
-		<url>https://hpalm-maven-plugin.googlecode.com/svn/trunk/</url>
+		<connection>scm:svn:https://hpalm-maven-plugin.googlecode.com/svn/tags/release-0.0.5</connection>
+		<developerConnection>scm:svn:https://hpalm-maven-plugin.googlecode.com/svn/tags/release-0.0.5</developerConnection>
+		<url>https://hpalm-maven-plugin.googlecode.com/svn/tags/release-0.0.5</url>
 	</scm>
 
 	<url>https://code.google.com/p/hpalm-maven-plugin/</url>
