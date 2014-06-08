@@ -1,0 +1,68 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.apache.maven.plugin.my.unit</groupId>
+	<artifactId>project-to-test</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<name>Test MyMojo</name>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>hpalm-maven-plugin</artifactId>
+				<configuration>
+					<url>http://alm.eu.accor.net:8080</url>
+					<project>
+						TD_RESA
+					</project>
+					<domain>RES_AND_REV</domain>
+					<queryValues>
+						<project>
+							FOLS Sender
+						</project>
+						<status>Corrigée</status>
+						<planned-closing-ver>1.1.0</planned-closing-ver>
+					</queryValues>
+					<valuesToExport>
+						<param>id</param>
+						<param>name</param>
+						<param>owner</param>
+						<param>detected-by</param>
+						<param>user-04</param>
+						<param>user-03</param>
+						<param>user-08</param>
+						<param>creation-time</param>
+						<param>detection-version</param>
+						<param>severity</param>
+					</valuesToExport>
+					<translationOfValuesToExport>
+						<id>ID</id>
+						<name>Name</name>
+						<owner>Correcteur</owner>
+						<detected-by>Emmiteur</detected-by>
+						<user-04>04</user-04>
+						<user-03>03</user-03>
+						<user-08>08</user-08>
+						<creation-time>Crée</creation-time>
+						<detection-version>Detectée en version</detection-version>
+						<severity>Gravité</severity>
+					</translationOfValuesToExport>
+					<confluenceServer>http://confluence.accor.net</confluenceServer>
+					<confluencePageID>24391678</confluencePageID>
+					<updateHeader><![CDATA[<h2>${project.version}</h2>]]></updateHeader>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
