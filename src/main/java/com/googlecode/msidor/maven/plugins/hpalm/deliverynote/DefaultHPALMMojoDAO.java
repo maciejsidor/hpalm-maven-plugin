@@ -41,7 +41,7 @@ import sun.misc.BASE64Encoder;
  *
  */
 @SuppressWarnings("restriction")
-public class DefaultHPALMMavenPluginDAO implements HPALMMavenPluginDAOI
+public class DefaultHPALMMojoDAO implements HPALMMojoDAOI
 {
 	/**
 	 * The RPC client for connecting to Confluence
@@ -51,7 +51,7 @@ public class DefaultHPALMMavenPluginDAO implements HPALMMavenPluginDAOI
 	/**
 	 * Default contructor
 	 */
-	public DefaultHPALMMavenPluginDAO()
+	public DefaultHPALMMojoDAO()
 	{
 	}
 	

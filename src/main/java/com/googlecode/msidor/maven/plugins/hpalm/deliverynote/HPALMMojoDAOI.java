@@ -28,7 +28,7 @@ import org.apache.xmlrpc.XmlRpcException;
  * @author Maciej SIDOR
  *
  */
-public interface HPALMMavenPluginDAOI
+public interface HPALMMojoDAOI
 {
 
 	/**

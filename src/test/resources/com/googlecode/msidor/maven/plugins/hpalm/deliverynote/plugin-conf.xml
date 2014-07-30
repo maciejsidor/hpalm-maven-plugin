@@ -2,65 +2,72 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.apache.maven.plugin.my.unit</groupId>
-	<artifactId>project-to-test</artifactId>
+	<groupId>com.googlecode.msidor.maven.plugins</groupId>
+	<artifactId>hpalm-maven-plugin-test</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>Test MyMojo</name>
-
-	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>3.8.1</version>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-
+	
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>com.googlecode.msidor.maven.plugins</groupId>
 				<artifactId>hpalm-maven-plugin</artifactId>
+				<version>0.0.6-SNAPSHOT</version>
 				<configuration>
-					<url>http://alm.eu.accor.net:8080</url>
+					<url>http://alm.organization.net:8080</url>
 					<project>
-						TD_RESA
+						PROJECT_1
 					</project>
-					<domain>RES_AND_REV</domain>
+					<domain>DEP1</domain>
 					<queryValues>
 						<project>
-							FOLS Sender
+							Test Project
 						</project>
-						<status>Corrigée</status>
-						<planned-closing-ver>1.1.0</planned-closing-ver>
+						<status>Corrected</status>
+						<planned-closing-ver>${project.version}</planned-closing-ver>
 					</queryValues>
 					<valuesToExport>
 						<param>id</param>
 						<param>name</param>
 						<param>owner</param>
 						<param>detected-by</param>
-						<param>user-04</param>
-						<param>user-03</param>
-						<param>user-08</param>
 						<param>creation-time</param>
 						<param>detection-version</param>
 						<param>severity</param>
+						<param>user-04</param>
 					</valuesToExport>
 					<translationOfValuesToExport>
 						<id>ID</id>
 						<name>Name</name>
 						<owner>Correcteur</owner>
 						<detected-by>Emmiteur</detected-by>
-						<user-04>04</user-04>
-						<user-03>03</user-03>
-						<user-08>08</user-08>
 						<creation-time>Crée</creation-time>
 						<detection-version>Detectée en version</detection-version>
 						<severity>Gravité</severity>
+						<user-04>Type</user-04>
 					</translationOfValuesToExport>
-					<confluenceServer>http://confluence.accor.net</confluenceServer>
+					<confluenceServer>http://confluence.organization.net</confluenceServer>
 					<confluencePageID>24391678</confluencePageID>
 					<updateHeader><![CDATA[<h2>${project.version}</h2>]]></updateHeader>
+					<confluenceKeyWordForUpdate></confluenceKeyWordForUpdate>
+					<changesOutputFilePath>out/changes.xml</changesOutputFilePath>
+					<changesFixIssuesFilter>
+						<user-04>Defect</user-04>
+					</changesFixIssuesFilter>
+					<changesAddIssuesFilter>
+						<user-04>Evolution</user-04>
+					</changesAddIssuesFilter>
+					<changesUpdateIssuesFilter>
+						<user-04>Amelioration</user-04>
+					</changesUpdateIssuesFilter>
+					<changesRemoveIssuesFilter>
+						<user-04>Delete</user-04>
+					</changesRemoveIssuesFilter>
+					<changesDevFiledMapping>owner</changesDevFiledMapping>
+					<changesDescFiledMapping>name</changesDescFiledMapping>
+					<changesDueToFiledMapping>detected-by</changesDueToFiledMapping>
+					<changesProjectVersion>${project.version}</changesProjectVersion>
 				</configuration>
 			</plugin>
 		</plugins>

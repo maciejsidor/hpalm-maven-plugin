@@ -69,7 +69,7 @@ import org.apache.maven.plugin.MojoFailureException;
  *         </p>
  * @goal generate-change
  * */
-public class HPALMMavenPlugin extends AbstractMojo
+public class HPALMMojo extends AbstractMojo
 {
 	/**
 	 * The HP ALM server address
@@ -285,7 +285,7 @@ public class HPALMMavenPlugin extends AbstractMojo
 	/**
 	 * Plugin Data Access Object
 	 */
-	private HPALMMavenPluginDAOI dao 						  = new DefaultHPALMMavenPluginDAO();
+	private HPALMMojoDAOI dao 						  = new DefaultHPALMMojoDAO();
 
 	/**
 	 * <p>
@@ -791,12 +791,12 @@ public class HPALMMavenPlugin extends AbstractMojo
 
 	}
 	
-	public HPALMMavenPluginDAOI getDao()
+	public HPALMMojoDAOI getDao()
 	{
 		return dao;
 	}
 
-	public void setDao(HPALMMavenPluginDAOI dao)
+	public void setDao(HPALMMojoDAOI dao)
 	{
 		this.dao = dao;
 	}    
