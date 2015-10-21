@@ -19,7 +19,7 @@
 			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
 			<distribution>repo</distribution>
 			<comments>
-				Copyright 2014 Maciej SIDOR [maciejsidor@gmail.com]
+				Copyright 2015 Maciej SIDOR [maciejsidor@gmail.com]
 				
 				Licensed under the Apache License, Version 2.0 (the "License");
 				you may not use this file except in compliance with the License.
@@ -37,18 +37,18 @@
 	</licenses>
 
 	<issueManagement>
-		<url>https://code.google.com/p/hpalm-maven-plugin/issues/list</url>
+		<url>https://github.com/maciejsidor/hpalm-maven-plugin/issues</url>
 	</issueManagement>
 
 	<scm>
-		<connection>scm:svn:https://hpalm-maven-plugin.googlecode.com/svn/trunk/</connection>
-		<developerConnection>scm:svn:https://hpalm-maven-plugin.googlecode.com/svn/trunk/</developerConnection>
-		<url>https://hpalm-maven-plugin.googlecode.com/svn/trunk/</url>
+		<connection>scm:git:https://github.com/maciejsidor/hpalm-maven-plugin</connection>
+		<developerConnection>scm:git:https://github.com/maciejsidor/hpalm-maven-plugin</developerConnection>
+		<url>https://github.com/maciejsidor/hpalm-maven-plugin</url>
 	</scm>
 
-	<url>https://code.google.com/p/hpalm-maven-plugin/</url>
+	<url>https://github.com/maciejsidor/hpalm-maven-plugin</url>
 
-	<inceptionYear>2014</inceptionYear>
+	<inceptionYear>2015</inceptionYear>
 
 	<developers>
 		<developer>
