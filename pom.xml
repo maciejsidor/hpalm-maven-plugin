@@ -1,10 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<packaging>maven-plugin</packaging>
 	<groupId>com.googlecode.msidor.maven.plugins</groupId>
 	<artifactId>hpalm-maven-plugin</artifactId>
-	<version>1.0.2-SNAPSHOT</version>
+	<version>1.0.3-SNAPSHOT</version>
 
 	<name>hpalm-maven-plugin</name>
 
@@ -45,7 +44,8 @@
 		<connection>scm:git:https://github.com/maciejsidor/hpalm-maven-plugin</connection>
 		<developerConnection>scm:git:https://github.com/maciejsidor/hpalm-maven-plugin</developerConnection>
 		<url>https://github.com/maciejsidor/hpalm-maven-plugin</url>
-  	</scm>
+  	  <tag>HEAD</tag>
+  </scm>
 
 	<url>https://github.com/maciejsidor/hpalm-maven-plugin</url>
 
