@@ -45,8 +45,7 @@
 		<connection>scm:git:https://github.com/maciejsidor/hpalm-maven-plugin</connection>
 		<developerConnection>scm:git:https://github.com/maciejsidor/hpalm-maven-plugin</developerConnection>
 		<url>https://github.com/maciejsidor/hpalm-maven-plugin</url>
-	  <tag>HEAD</tag>
-  </scm>
+  	</scm>
 
 	<url>https://github.com/maciejsidor/hpalm-maven-plugin</url>
 
