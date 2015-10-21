@@ -4,7 +4,7 @@
 	<packaging>maven-plugin</packaging>
 	<groupId>com.googlecode.msidor.maven.plugins</groupId>
 	<artifactId>hpalm-maven-plugin</artifactId>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.2-SNAPSHOT</version>
 
 	<name>hpalm-maven-plugin</name>
 
@@ -45,7 +45,8 @@
 		<connection>scm:git:https://github.com/maciejsidor/hpalm-maven-plugin</connection>
 		<developerConnection>scm:git:https://github.com/maciejsidor/hpalm-maven-plugin</developerConnection>
 		<url>https://github.com/maciejsidor/hpalm-maven-plugin</url>
-	</scm>
+	  <tag>HEAD</tag>
+  </scm>
 
 	<url>https://github.com/maciejsidor/hpalm-maven-plugin</url>
 
